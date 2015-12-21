@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# by thenewboston pygame tutorials 1-42
+# snake game based on thenewboston's pygame tutorials (search on Youtube)
 import pygame
 import time
 import random
@@ -28,6 +28,7 @@ apple_value_bonus = 50
 gameDisplay = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Matopeli')
 
+# graphics from openclipart.org
 game_icon = pygame.image.load('snowflake.png')
 pygame.display.set_icon(game_icon)
 
@@ -36,6 +37,9 @@ img_snakebody = pygame.image.load('snakebody.png')
 
 img_snowflake_white = pygame.image.load('snowflake_white.png')
 img_snowflake_golden = pygame.image.load('snowflake_golden.png')
+
+# sound effect made on bfxr.net
+snd_pickup = pygame.mixer.Sound('pickup.wav')
 
 clock = pygame.time.Clock()
 
@@ -170,6 +174,10 @@ def message_to_screen(msg, color, y_displace=0, size="small"):
 
 # =============== MAIN GAME LOOP ==================
 def gameLoop():
+    # music by: https://www.freesound.org/people/joshuaempyre/sounds/251461/
+    pygame.mixer.music.load('joshuaempyre.wav')
+    pygame.mixer.music.play(-1)
+    
     tick_rate = 10
     
     global snake_dir
@@ -287,11 +295,13 @@ def gameLoop():
         # eat apple = move it to new position
         if lead_x > rand_apple_x and lead_x < rand_apple_x + apple_size or lead_x + block_size > rand_apple_x and lead_x + block_size < rand_apple_x + apple_size:
             if lead_y > apple_y_pos and lead_y < apple_y_pos + apple_size:
+                snd_pickup.play()
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
                 score_points += apple_value
                 snake_length += 1
                 tick_rate += 1
             elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
+                snd_pickup.play()
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
                 score_points += apple_value
                 snake_length += 1
@@ -300,7 +310,8 @@ def gameLoop():
         clock.tick(tick_rate)
 
     # Here ends while not gameExit
-
+    
+    pygame.mixer.music.stop()
     pygame.quit()
     quit()
 
