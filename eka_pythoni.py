@@ -63,11 +63,42 @@ def game_intro():
                           red,
                           -20,
                           "medium")
-        message_to_screen("Press C to play, Q to quit.",
+        message_to_screen("Press C to play, P to pause, Q to quit.",
                           red,
                           10,
                           "medium")
         pygame.display.update()
+
+
+def pause():
+    paused = True
+
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_c:
+                    paused = False
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    quit()
+        gameDisplay.fill(white)
+        message_to_screen("Paused",
+                          black,
+                          -100,
+                          size="large")
+        message_to_screen("Press C to continue or Q to quit",
+                          black,
+                          -70)
+        pygame.display.update()
+        clock.tick(5)
+
+
+def score(score):
+    text = font_small.render("Score: " + str(score), True, black)
+    gameDisplay.blit(text, [0,0])
 
 
 def rand_apple_gen():
@@ -173,6 +204,8 @@ def gameLoop():
                     snake_dir = "down"
                     lead_y_change = block_size
                     lead_x_change = 0
+                elif event.key == pygame.K_p:
+                    pause()
 
         if lead_x >= display_width or lead_x < 0 or lead_y >= display_height or lead_y < 0:
             gameOver = True
@@ -198,8 +231,13 @@ def gameLoop():
         for each_segment in snakelist[:-1]:
             if each_segment == snake_head:
                 gameOver = True
-        
+
+        # draw snake
         snake(block_size, snakelist)
+
+        # calculate and display score based on snake length
+        score(snake_length -1)
+        
         pygame.display.update()
 
         # eat apple = move it to new position
