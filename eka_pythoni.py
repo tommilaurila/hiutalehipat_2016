@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# seuraava: https://www.youtube.com/watch?v=Gyc5dMdP2uc
+# by thenewboston pygame tutorials 1-42
 import pygame
 import time
 import random
@@ -16,7 +16,10 @@ display_width = 800
 display_height = 600
 
 block_size = 20
+
 apple_size = 30
+apple_y_pos = 0
+apple_fall_speed = 5
 
 gameDisplay = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Matopeli')
@@ -108,6 +111,23 @@ def rand_apple_gen():
     return rand_apple_x, rand_apple_y
 
 
+def generate_apple():
+    apple_value = 10
+    
+    # generate new apple position
+    rand_apple_x = round(random.randrange(0, display_width-apple_size))
+    rand_apple_y = round(random.randrange(0, display_height-apple_size))
+
+    # is the new apple a bonus apple?
+    apple_type = round(random.randrange(1, 10))
+
+    # lucky number is seven (7), chance 1 out of 10
+    if apple_type == 7:
+        apple_value = 50
+
+    return rand_apple_x, rand_apple_y, apple_value
+
+
 def snake(block_size, snakelist):
     if snake_dir == "right":
         head = pygame.transform.rotate(img_snakehead, 270)
@@ -141,12 +161,15 @@ def message_to_screen(msg, color, y_displace=0, size="small"):
     gameDisplay.blit(text_surf, text_rect)
 
 
+# =============== MAIN GAME LOOP ==================
 def gameLoop():
     global snake_dir
     snake_dir = "right"
     
     gameExit = False
     gameOver = False
+
+    score_points = 0
 
     lead_x = display_width/2
     lead_y = display_height/2
@@ -157,7 +180,9 @@ def gameLoop():
     snakelist = []
     snake_length = 1
 
-    rand_apple_x, rand_apple_y = rand_apple_gen()
+    # rand_apple_x, rand_apple_y = rand_apple_gen()
+    rand_apple_x, rand_apple_y, apple_value = generate_apple()
+    apple_y_pos = rand_apple_y + apple_fall_speed
     
     while not gameExit:
         while gameOver == True:
@@ -217,7 +242,14 @@ def gameLoop():
         gameDisplay.fill(white)
 
         # draw apple
-        gameDisplay.blit(img_snowflake, (rand_apple_x, rand_apple_y))
+        gameDisplay.blit(img_snowflake, (rand_apple_x, apple_y_pos))
+        apple_y_pos += apple_fall_speed
+        
+        # if apple falls out of screen
+        if apple_y_pos > display_height:
+            # generate new apple
+            rand_apple_x, apple_y_pos, apple_value = generate_apple()
+            print("X:" + str(rand_apple_x) + " Y:" + str(apple_y_pos) + " V:" + str(apple_value))
         
         snake_head = []
         snake_head.append(lead_x)
@@ -236,20 +268,24 @@ def gameLoop():
         snake(block_size, snakelist)
 
         # calculate and display score based on snake length
-        score(snake_length -1)
+        score(score_points)
         
         pygame.display.update()
 
         # eat apple = move it to new position
         if lead_x > rand_apple_x and lead_x < rand_apple_x + apple_size or lead_x + block_size > rand_apple_x and lead_x + block_size < rand_apple_x + apple_size:
-            if lead_y > rand_apple_y and lead_y < rand_apple_y + apple_size:
-                rand_apple_x, rand_apple_y = rand_apple_gen()
+            if lead_y > apple_y_pos and lead_y < apple_y_pos + apple_size:
+                rand_apple_x, rand_apple_y, apple_value = generate_apple()
+                score_points += apple_value
                 snake_length += 1
-            elif lead_y + block_size > rand_apple_y and lead_y + block_size < rand_apple_y + apple_size:
-                rand_apple_x, rand_apple_y = rand_apple_gen()
+            elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
+                rand_apple_x, rand_apple_y, apple_value = generate_apple()
+                score_points += apple_value
                 snake_length += 1
             
         clock.tick(tick_rate)
+
+    # Here ends while not gameExit
 
     pygame.quit()
     quit()
