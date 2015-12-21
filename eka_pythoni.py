@@ -11,6 +11,7 @@ black = (0,0,0)
 red = (255,0,0)
 blue = (0,0,255)
 green = (0,255,0)
+skyblue = (40,195,255)
 
 display_width = 800
 display_height = 600
@@ -21,6 +22,9 @@ apple_size = 30
 apple_y_pos = 0
 apple_fall_speed = 5
 
+apple_value_plain = 10
+apple_value_bonus = 50
+
 gameDisplay = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Matopeli')
 
@@ -28,10 +32,12 @@ game_icon = pygame.image.load('snowflake.png')
 pygame.display.set_icon(game_icon)
 
 img_snakehead = pygame.image.load('snakehead.png')
-img_snowflake = pygame.image.load('snowflake.png')
+img_snakebody = pygame.image.load('snakebody.png')
+
+img_snowflake_white = pygame.image.load('snowflake_white.png')
+img_snowflake_golden = pygame.image.load('snowflake_golden.png')
 
 clock = pygame.time.Clock()
-tick_rate = 10
 
 snake_dir = "right"
 
@@ -112,7 +118,7 @@ def rand_apple_gen():
 
 
 def generate_apple():
-    apple_value = 10
+    apple_value = apple_value_plain
     
     # generate new apple position
     rand_apple_x = round(random.randrange(0, display_width-apple_size))
@@ -123,7 +129,7 @@ def generate_apple():
 
     # lucky number is seven (7), chance 1 out of 10
     if apple_type == 7:
-        apple_value = 50
+        apple_value = apple_value_bonus
 
     return rand_apple_x, rand_apple_y, apple_value
 
@@ -139,9 +145,10 @@ def snake(block_size, snakelist):
         head = pygame.transform.rotate(img_snakehead, 180)
         
     gameDisplay.blit(head, (snakelist[-1][0], snakelist[-1][1]))
-    # for-loop up to the next to last element [:-1]
+    # for-loop up to the next to second last element [:-2]
     for x_y in snakelist[:-1]:
-        pygame.draw.rect(gameDisplay, black, [x_y[0], x_y[1], block_size, block_size])
+        gameDisplay.blit(img_snakebody, (x_y[0], x_y[1]))
+        #pygame.draw.rect(gameDisplay, black, [x_y[0], x_y[1], block_size, block_size])
 
 
 def text_objects(text, color, size):
@@ -163,6 +170,8 @@ def message_to_screen(msg, color, y_displace=0, size="small"):
 
 # =============== MAIN GAME LOOP ==================
 def gameLoop():
+    tick_rate = 10
+    
     global snake_dir
     snake_dir = "right"
     
@@ -239,23 +248,26 @@ def gameLoop():
         lead_y += lead_y_change
 
         # fill background
-        gameDisplay.fill(white)
+        gameDisplay.fill(skyblue)
 
         # draw apple
-        gameDisplay.blit(img_snowflake, (rand_apple_x, apple_y_pos))
+        if apple_value == apple_value_plain:
+            gameDisplay.blit(img_snowflake_white, (rand_apple_x, apple_y_pos))
+        elif apple_value == apple_value_bonus:
+            gameDisplay.blit(img_snowflake_golden, (rand_apple_x, apple_y_pos))
+            
         apple_y_pos += apple_fall_speed
         
         # if apple falls out of screen
         if apple_y_pos > display_height:
             # generate new apple
             rand_apple_x, apple_y_pos, apple_value = generate_apple()
-            print("X:" + str(rand_apple_x) + " Y:" + str(apple_y_pos) + " V:" + str(apple_value))
-        
+
+        # the snake
         snake_head = []
         snake_head.append(lead_x)
         snake_head.append(lead_y)
         snakelist.append(snake_head)
-
         if len(snakelist) > snake_length:
             del snakelist[0]
 
@@ -278,10 +290,12 @@ def gameLoop():
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
                 score_points += apple_value
                 snake_length += 1
+                tick_rate += 1
             elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
                 score_points += apple_value
                 snake_length += 1
+                tick_rate += 1
             
         clock.tick(tick_rate)
 
