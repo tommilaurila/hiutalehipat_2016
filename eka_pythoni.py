@@ -32,13 +32,14 @@ pygame.display.set_caption('FlakeSnake')
 game_icon = pygame.image.load('snowflake_white.png')
 pygame.display.set_icon(game_icon)
 
-img_snakehead = pygame.image.load('snakehead.png')
-img_snakebody = pygame.image.load('snakebody.png')
+img_snakehead = pygame.image.load('snakehead_green.png')
+img_snakebody = pygame.image.load('snakebody_green.png')
 
 img_snowflake_white = pygame.image.load('snowflake_white.png')
 img_snowflake_golden = pygame.image.load('snowflake_golden.png')
 
 img_background = pygame.image.load('background.png')
+img_fslogo = pygame.image.load('fslogo.png')
 
 # sound effect made on bfxr.net
 snd_pickup = pygame.mixer.Sound('pickup.wav')
@@ -147,7 +148,7 @@ def message_to_screen(msg, color, y_displace=0, size="small"):
 def game_intro():
     # intro music by http://freesound.org/people/djgriffin/sounds/251289/
     pygame.mixer.music.load('djgriffin.wav')
-    pygame.mixer.music.play(-1)
+    pygame.mixer.music.play(-1)   
     
     intro = True
     apple_fall_speed = 2
@@ -172,7 +173,21 @@ def game_intro():
                     pygame.quit()
                     quit()
                     
-        gameDisplay.blit(img_background, (0,0))
+        gameDisplay.blit(img_background, (0, 0))
+        gameDisplay.blit(img_fslogo, (100, 10))      
+
+        message_to_screen("Sieppaa lumihiutaleita ennen kun ne putoavat maahan ja",
+                          white,
+                          150,
+                          "small")
+        message_to_screen("kasvattavat lumihankea. Varo lumihankea ja ruudun reunoja.",
+                          white,
+                          180,
+                          "small")
+        message_to_screen("C = uusi peli, P = tauko, Q = lopetus",
+                          yellow,
+                          230,
+                          "small")
 
         # draw apple zig-zag falling
         if flake_dir == "right" and rand_apple_x < flake_original_x + flake_max_x_displacement:
@@ -192,23 +207,7 @@ def game_intro():
         if apple_y_pos > display_height:  
             rand_apple_x, apple_y_pos, apple_value = generate_apple()
             flake_original_x = rand_apple_x
-        
-        message_to_screen("FlakeSnake",
-                          green,
-                          -100,
-                          "large")
-        message_to_screen("Sieppaa lumihiutaleita ennen kun ne putoavat maahan ja",
-                          white,
-                          -20,
-                          "small")
-        message_to_screen("kasvattavat lumihankea. Varo lumihankea ja ruudun reunoja.",
-                          white,
-                          10,
-                          "small")
-        message_to_screen("C = uusi peli, P = tauko, Q = lopetus",
-                          yellow,
-                          50,
-                          "small")
+
         pygame.display.update()
         clock.tick(20)
 
