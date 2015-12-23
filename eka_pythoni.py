@@ -13,6 +13,7 @@ blue = (0,0,255)
 green = (0,255,0)
 yellow = (255,255,0)
 skyblue = (40,195,255)
+snow = (148,148,188)
 
 display_width = 800
 display_height = 600
@@ -36,9 +37,11 @@ img_snakebody = pygame.image.load('snakebody_green.png')
 img_snowflake_white = pygame.image.load('snowflake_white.png')
 img_snowflake_golden = pygame.image.load('snowflake_golden.png')
 
-img_background = pygame.image.load('background.png')
+img_background = pygame.image.load('background2.png')
 img_fslogo = pygame.image.load('fslogo.png')
 img_snowline = pygame.image.load('snowline.png')
+
+img_moon = pygame.image.load('kuu_96.png')
 
 # sound effect made on bfxr.net
 snd_pickup = pygame.mixer.Sound('pickup.wav')
@@ -105,7 +108,7 @@ def generate_apple():
     return rand_apple_x, rand_apple_y, apple_value
 
 
-def snake(block_size, snakelist):
+def snake(snake_move_speed, block_size, snakelist):
     if snake_dir == "right":
         head = pygame.transform.rotate(img_snakehead, 270)
     if snake_dir == "left":
@@ -114,10 +117,28 @@ def snake(block_size, snakelist):
         head = img_snakehead
     if snake_dir == "down":
         head = pygame.transform.rotate(img_snakehead, 180)
-        
+
+    # draw snake head
     gameDisplay.blit(head, (snakelist[-1][0], snakelist[-1][1]))
-    # for-loop up to the next to second last element [:-2]
+
+##    multiplier = 1
+##
     for x_y in snakelist[:-1]:
+##        if snake_dir == "right":
+##            x = x_y[0]-20 * multiplier
+##            gameDisplay.blit(img_snakebody, (x, x_y[1]))
+##        if snake_dir == "left":
+##            x = x_y[0]+20 * multiplier
+##            gameDisplay.blit(img_snakebody, (x, x_y[1]))
+##        if snake_dir == "up":
+##            y = x_y[1]+20 * multiplier
+##            gameDisplay.blit(img_snakebody, (x_y[0], y))
+##        if snake_dir == "down":
+##            y = x_y[1]-20 * multiplier
+##            gameDisplay.blit(img_snakebody, (x_y[0], y))
+##
+##        multiplier += 1
+        
         gameDisplay.blit(img_snakebody, (x_y[0], x_y[1]))
         #pygame.draw.rect(gameDisplay, black, [x_y[0], x_y[1], block_size, block_size])
 
@@ -216,6 +237,8 @@ def gameLoop():
     
     tick_rate = 30
 
+    moon_x = 96
+
     snow_grow_height = 20
     bottom_line = display_height
     
@@ -298,10 +321,10 @@ def gameLoop():
                 elif event.key == pygame.K_p:
                     pause()
                 elif event.key == pygame.K_z:
-                    print("bottomline: " + str(bottom_line) + " blocksize: " + str(block_size) + " leady: " + str(lead_y))
+                    print("snakelist: " + str(snakelist))
 
         # snake crosses boundaries (2x block size because we are using the old bottom line value)
-        if lead_x >= display_width or lead_x < 0 or lead_y >= bottom_line -  2 * block_size or lead_y < 0:
+        if lead_x >= display_width or lead_x < 0 or lead_y >= bottom_line - block_size or lead_y < 0:
             snd_failure.play()
             pygame.mixer.music.stop()
             gameOver = True
@@ -321,6 +344,10 @@ def gameLoop():
 
         # draw background
         gameDisplay.blit(img_background, (0,0))
+
+        # draw slowly moving moon
+        gameDisplay.blit(img_moon, (moon_x, 48))
+        moon_x += 0.016
 
         # change apple image according to value
         if apple_value == apple_value_plain:
@@ -343,11 +370,11 @@ def gameLoop():
             flake_original_x = rand_apple_x
 
         # draw bottom line snow and snow edge graphics
-        pygame.draw.rect(gameDisplay, white, [0, bottom_line, display_width, display_height-bottom_line])
+        pygame.draw.rect(gameDisplay, snow, [0, bottom_line, display_width, display_height-bottom_line])
         gameDisplay.blit(img_snowline, (0, bottom_line))
         
         # the snake
-        snake_head = []
+        snake_head = []                    
         snake_head.append(lead_x)
         snake_head.append(lead_y)
         snakelist.append(snake_head)
@@ -362,30 +389,29 @@ def gameLoop():
                 gameOver = True
 
         # draw snake
-        snake(block_size, snakelist)
-
-        # calculate and display score based on snake length
-        score(score_points)
-        
-        pygame.display.update()
+        snake(snake_move_speed, block_size, snakelist)
 
         # eat apple = move it to new position
         if lead_x > rand_apple_x and lead_x < rand_apple_x + apple_size or lead_x + apple_size > rand_apple_x and lead_x + block_size < rand_apple_x + apple_size:
             if lead_y > apple_y_pos and lead_y < apple_y_pos + apple_size:
                 snd_pickup.play()
-                rand_apple_x, rand_apple_y, apple_value = generate_apple()
-                flake_original_x = rand_apple_x
                 score_points += apple_value
+                rand_apple_x, rand_apple_y, apple_value = generate_apple()
+                flake_original_x = rand_apple_x               
                 snake_length += 1
-                tick_rate += 1
+                #tick_rate += 1
             elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
                 snd_pickup.play()
-                rand_apple_x, rand_apple_y, apple_value = generate_apple()
-                flake_original_x = rand_apple_x
                 score_points += apple_value
+                rand_apple_x, rand_apple_y, apple_value = generate_apple()
+                flake_original_x = rand_apple_x               
                 snake_length += 1
-                tick_rate += 1
-            
+                #tick_rate += 1
+
+        # calculate and display score based on snake length
+        score(score_points)
+
+        pygame.display.update()
         clock.tick(tick_rate)
 
     # Here ends while not gameExit
