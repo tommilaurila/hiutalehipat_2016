@@ -17,8 +17,6 @@ skyblue = (40,195,255)
 display_width = 800
 display_height = 600
 
-block_size = 20
-
 apple_size = 30
 apple_y_pos = 0
 
@@ -40,9 +38,12 @@ img_snowflake_golden = pygame.image.load('snowflake_golden.png')
 
 img_background = pygame.image.load('background.png')
 img_fslogo = pygame.image.load('fslogo.png')
+img_snowline = pygame.image.load('snowline.png')
 
 # sound effect made on bfxr.net
 snd_pickup = pygame.mixer.Sound('pickup.wav')
+# sound effect from http://freesound.org/people/fins/sounds/171673/
+snd_failure = pygame.mixer.Sound('failure.wav')
 
 clock = pygame.time.Clock()
 
@@ -87,18 +88,11 @@ def score(score):
     gameDisplay.blit(text, [4,4])
 
 
-def rand_apple_gen():
-    rand_apple_x = round(random.randrange(0, display_width-apple_size))
-    rand_apple_y = round(random.randrange(0, display_height-apple_size))
-
-    return rand_apple_x, rand_apple_y
-
-
 def generate_apple():
     apple_value = apple_value_plain
     
     # generate new apple random position (at top half of screen)
-    rand_apple_x = round(random.randrange(0, display_width-apple_size))
+    rand_apple_x = round(random.randrange(apple_size, display_width-apple_size))
     rand_apple_y = round(random.randrange(0, display_height/2-apple_size))
 
     # is the new apple a bonus apple?
@@ -220,14 +214,16 @@ def gameLoop():
     pygame.mixer.music.load('joshuaempyre.wav')
     pygame.mixer.music.play(-1)
     
-    tick_rate = 20
+    tick_rate = 30
 
-    snow_grow_height = 10
+    snow_grow_height = 20
     bottom_line = display_height
     
     global snake_dir
     snake_dir = "right"
-    snake_move_speed = 6
+    snake_move_speed = 4
+
+    block_size = 20
 
     apple_fall_speed = 3
     missed_apples = 0
@@ -301,9 +297,13 @@ def gameLoop():
                     lead_x_change = 0
                 elif event.key == pygame.K_p:
                     pause()
+                elif event.key == pygame.K_z:
+                    print("bottomline: " + str(bottom_line) + " blocksize: " + str(block_size) + " leady: " + str(lead_y))
 
-        # snake crosses boundaries
-        if lead_x >= display_width or lead_x < 0 or lead_y >= bottom_line or lead_y < 0:
+        # snake crosses boundaries (2x block size because we are using the old bottom line value)
+        if lead_x >= display_width or lead_x < 0 or lead_y >= bottom_line -  2 * block_size or lead_y < 0:
+            snd_failure.play()
+            pygame.mixer.music.stop()
             gameOver = True
 
         lead_x += lead_x_change
@@ -342,8 +342,9 @@ def gameLoop():
             rand_apple_x, apple_y_pos, apple_value = generate_apple()
             flake_original_x = rand_apple_x
 
-        # draw bottom line snow
+        # draw bottom line snow and snow edge graphics
         pygame.draw.rect(gameDisplay, white, [0, bottom_line, display_width, display_height-bottom_line])
+        gameDisplay.blit(img_snowline, (0, bottom_line))
         
         # the snake
         snake_head = []
@@ -356,6 +357,8 @@ def gameLoop():
         # snake crash into itself, head it at end of list
         for each_segment in snakelist[:-1]:
             if each_segment == snake_head:
+                snd_failure.play()
+                pygame.mixer.music.stop()
                 gameOver = True
 
         # draw snake
