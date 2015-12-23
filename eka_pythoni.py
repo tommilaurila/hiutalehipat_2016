@@ -14,6 +14,7 @@ green = (0,255,0)
 yellow = (255,255,0)
 skyblue = (40,195,255)
 snow = (148,148,188)
+snakegreen = (0,130,12)
 
 display_width = 800
 display_height = 600
@@ -33,6 +34,7 @@ pygame.display.set_icon(game_icon)
 
 img_snakehead = pygame.image.load('snakehead_green.png')
 img_snakebody = pygame.image.load('snakebody_green.png')
+img_snakebutt = pygame.image.load('snakebutt.png')
 
 img_snowflake_white = pygame.image.load('snowflake_white.png')
 img_snowflake_golden = pygame.image.load('snowflake_golden.png')
@@ -111,36 +113,28 @@ def generate_apple():
 def snake(snake_move_speed, block_size, snakelist):
     if snake_dir == "right":
         head = pygame.transform.rotate(img_snakehead, 270)
+        butt = pygame.transform.rotate(img_snakebutt, 270)
     if snake_dir == "left":
         head = pygame.transform.rotate(img_snakehead, 90)
+        butt = pygame.transform.rotate(img_snakebutt, 90)
     if snake_dir == "up":
         head = img_snakehead
+        butt = img_snakebutt
     if snake_dir == "down":
         head = pygame.transform.rotate(img_snakehead, 180)
+        butt = pygame.transform.rotate(img_snakebutt, 180)
 
     # draw snake head
     gameDisplay.blit(head, (snakelist[-1][0], snakelist[-1][1]))
 
-##    multiplier = 1
-##
-    for x_y in snakelist[:-1]:
-##        if snake_dir == "right":
-##            x = x_y[0]-20 * multiplier
-##            gameDisplay.blit(img_snakebody, (x, x_y[1]))
-##        if snake_dir == "left":
-##            x = x_y[0]+20 * multiplier
-##            gameDisplay.blit(img_snakebody, (x, x_y[1]))
-##        if snake_dir == "up":
-##            y = x_y[1]+20 * multiplier
-##            gameDisplay.blit(img_snakebody, (x_y[0], y))
-##        if snake_dir == "down":
-##            y = x_y[1]-20 * multiplier
-##            gameDisplay.blit(img_snakebody, (x_y[0], y))
-##
-##        multiplier += 1
-        
+    # use [1:-1] if drawing snake butt
+    for x_y in snakelist[:-1]:        
         gameDisplay.blit(img_snakebody, (x_y[0], x_y[1]))
-        #pygame.draw.rect(gameDisplay, black, [x_y[0], x_y[1], block_size, block_size])
+        #pygame.draw.rect(gameDisplay, snakegreen, [x_y[0], x_y[1], block_size, block_size])
+
+    # draw snake butt
+##    if(len(snakelist) > 1):
+##        gameDisplay.blit(butt, (snakelist[0][0], snakelist[0][1]))
 
 
 def text_objects(text, color, size):
@@ -244,7 +238,7 @@ def gameLoop():
     
     global snake_dir
     snake_dir = "right"
-    snake_move_speed = 4
+    snake_move_speed = 5
 
     block_size = 20
 
@@ -321,7 +315,7 @@ def gameLoop():
                 elif event.key == pygame.K_p:
                     pause()
                 elif event.key == pygame.K_z:
-                    print("snakelist: " + str(snakelist))
+                    print("snakelist: " + str(snakelist) + " length: " + str(snake_length))
 
         # snake crosses boundaries (2x block size because we are using the old bottom line value)
         if lead_x >= display_width or lead_x < 0 or lead_y >= bottom_line - block_size or lead_y < 0:
@@ -381,7 +375,7 @@ def gameLoop():
         if len(snakelist) > snake_length:
             del snakelist[0]
 
-        # snake crash into itself, head it at end of list
+        # snake crash into itself, head at end of list
         for each_segment in snakelist[:-1]:
             if each_segment == snake_head:
                 snd_failure.play()
@@ -400,6 +394,8 @@ def gameLoop():
                 flake_original_x = rand_apple_x               
                 snake_length += 1
                 #tick_rate += 1
+                if snake_move_speed <= block_size:
+                    snake_move_speed += 0.5
             elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
                 snd_pickup.play()
                 score_points += apple_value
@@ -407,6 +403,8 @@ def gameLoop():
                 flake_original_x = rand_apple_x               
                 snake_length += 1
                 #tick_rate += 1
+                if snake_move_speed < block_size:
+                    snake_move_speed += 0.5
 
         # calculate and display score based on snake length
         score(score_points)
