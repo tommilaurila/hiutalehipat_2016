@@ -102,7 +102,7 @@ def generate_apple():
     
     # generate new apple random position (at top half of screen)
     rand_apple_x = round(random.randrange(apple_size, display_width-apple_size))
-    rand_apple_y = round(random.randrange(0, display_height/2-apple_size))
+    rand_apple_y = round(random.randrange(0, display_height/2))
 
     # is the new apple a bonus apple?
     apple_type = round(random.randrange(1, 10))
@@ -181,10 +181,10 @@ def game_intro():
             if event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
                 # play button
-                if pos[0] > 690 and pos[0] < 690+96 and pos[1] > 490 and pos[1] < 490+96:
+                if pos[0] > 410 and pos[0] < 410+96 and pos[1] > 515 and pos[1] < 515+57:
                     intro = False
                 # stop button
-                if pos[0] > 15 and pos[0] < 15+96 and pos[1] > 490 and pos[1] < 490+96:
+                if pos[0] > 285 and pos[0] < 285+96 and pos[1] > 515 and pos[1] < 515+57:
                     pygame.quit()
                     quit()
                 
@@ -197,8 +197,8 @@ def game_intro():
         gameDisplay.blit(img_fslogo_text, (330, 85))
 
         # draw buttons
-        gameDisplay.blit(btn_play, (690, 490))
-        gameDisplay.blit(btn_stop, (15, 490))
+        gameDisplay.blit(btn_play, (410, 515))
+        gameDisplay.blit(btn_stop, (285, 515))
 
         # draw apple zig-zag falling
         if flake_dir == "right" and rand_apple_x < flake_original_x + flake_max_x_displacement:
@@ -291,10 +291,7 @@ def gameLoop():
                               yellow,
                               -70,
                               size="medium")
-##            message_to_screen("Press C to play again or Q to quit",
-##                              yellow,
-##                              -30,
-##                              size="small")
+
             pygame.display.update()
 
             for event in pygame.event.get():
@@ -311,10 +308,10 @@ def gameLoop():
                 if event.type == pygame.MOUSEBUTTONUP:
                     pos = pygame.mouse.get_pos()
                     # play button
-                    if pos[0] > 410 and pos[0] < 410+96 and pos[1] > 360 and pos[1] < 360+96:
+                    if pos[0] > 410 and pos[0] < 410+96 and pos[1] > 360 and pos[1] < 360+57:
                         gameLoop()
                     # stop button
-                    if pos[0] > 285 and pos[0] < 285+96 and pos[1] > 360 and pos[1] < 360+96:
+                    if pos[0] > 285 and pos[0] < 285+96 and pos[1] > 360 and pos[1] < 360+57:
                         gameOver = False
                         gameExit = True
             
@@ -424,6 +421,7 @@ def gameLoop():
                 score_popup_time = 30 
                 
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
+                apple_y_pos = rand_apple_y
                 flake_original_x = rand_apple_x               
                 snake_length += 1
                 if snake_move_speed <= block_size:
@@ -440,6 +438,7 @@ def gameLoop():
                 score_popup_time = 30
                 
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
+                apple_y_pos = rand_apple_y
                 flake_original_x = rand_apple_x               
                 snake_length += 1
                 if snake_move_speed < block_size:
