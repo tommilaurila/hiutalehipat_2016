@@ -45,6 +45,9 @@ img_snowline = pygame.image.load('snowline.png')
 
 img_moon = pygame.image.load('kuu_96.png')
 
+btn_play = pygame.image.load('btn_play.png')
+btn_stop = pygame.image.load('btn_stop.png')
+
 # sound effect made on bfxr.net
 snd_pickup = pygame.mixer.Sound('pickup.wav')
 # sound effect from http://freesound.org/people/fins/sounds/171673/
@@ -175,29 +178,27 @@ def game_intro():
                 if event.key == pygame.K_q:
                     pygame.quit()
                     quit()
+            if event.type == pygame.MOUSEBUTTONUP:
+                pos = pygame.mouse.get_pos()
+                # play button
+                if pos[0] > 690 and pos[0] < 690+96 and pos[1] > 490 and pos[1] < 490+96:
+                    intro = False
+                # stop button
+                if pos[0] > 15 and pos[0] < 15+96 and pos[1] > 490 and pos[1] < 490+96:
+                    pygame.quit()
+                    quit()
+                
 
         # draw background
         gameDisplay.blit(img_background, (0, 0))
 
         # draw snake image
         gameDisplay.blit(img_fslogo, (150, 150))
-        gameDisplay.blit(img_fslogo_text, (280, 135))
+        gameDisplay.blit(img_fslogo_text, (330, 85))
 
-        # draw instructions
-        gameDisplay.blit(img_snowflake_white, (600, 15))
-        text = font_small.render("+10  +", True, white)
-        gameDisplay.blit(text, [630,15])
-        gameDisplay.blit(img_snakebody, (695, 20))
-        
-        gameDisplay.blit(img_snowflake_golden, (600, 55))
-        text = font_small.render("+50  +", True, white)
-        gameDisplay.blit(text, [630,55])
-        gameDisplay.blit(img_snakebody, (695, 60))
-
-        message_to_screen("C = Play, P = Pause, Q = Quit",
-                          yellow,
-                          230,
-                          "small")
+        # draw buttons
+        gameDisplay.blit(btn_play, (690, 490))
+        gameDisplay.blit(btn_stop, (15, 490))
 
         # draw apple zig-zag falling
         if flake_dir == "right" and rand_apple_x < flake_original_x + flake_max_x_displacement:
@@ -250,9 +251,14 @@ def gameLoop():
     gameOver = False
 
     score_points = 0
+    score_popup_time = 0
+    score_popup_value = 0
+    score_popup_x = 395
+    score_popup_y = 5
 
-    lead_x = display_width/2
+    lead_x = display_width/4
     lead_y = display_height/2
+    
     # starting direction for movement
     lead_x_change = snake_move_speed
     lead_y_change = 0
@@ -270,15 +276,25 @@ def gameLoop():
     
     while not gameExit:
         while gameOver == True:
-            gameDisplay.fill(white)
+            # draw background
+            gameDisplay.blit(img_background, (0, 0))
+
+            # draw buttons
+            gameDisplay.blit(btn_play, (410, 360))
+            gameDisplay.blit(btn_stop, (285, 360))
+            
             message_to_screen("Game Over",
                               red,
-                              y_displace = -50,
+                              y_displace = -130,
                               size="large")
-            message_to_screen("Press C to play again or Q to quit",
-                              black,
-                              -10,
-                              size="small")
+            message_to_screen("Your score: " + str(score_points),
+                              yellow,
+                              -70,
+                              size="medium")
+##            message_to_screen("Press C to play again or Q to quit",
+##                              yellow,
+##                              -30,
+##                              size="small")
             pygame.display.update()
 
             for event in pygame.event.get():
@@ -292,6 +308,15 @@ def gameLoop():
                         gameOver = False
                     if event.key == pygame.K_c:
                         gameLoop()
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pos = pygame.mouse.get_pos()
+                    # play button
+                    if pos[0] > 410 and pos[0] < 410+96 and pos[1] > 360 and pos[1] < 360+96:
+                        gameLoop()
+                    # stop button
+                    if pos[0] > 285 and pos[0] < 285+96 and pos[1] > 360 and pos[1] < 360+96:
+                        gameOver = False
+                        gameExit = True
             
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -390,7 +415,14 @@ def gameLoop():
         if lead_x > rand_apple_x and lead_x < rand_apple_x + apple_size or lead_x + apple_size > rand_apple_x and lead_x + block_size < rand_apple_x + apple_size:
             if lead_y > apple_y_pos and lead_y < apple_y_pos + apple_size:
                 snd_pickup.play()
+                
                 score_points += apple_value
+                score_popup_value = apple_value
+                score_popup_x = lead_x
+                score_popup_y = lead_y
+                # 30 is about 1 sec. at 30 fps
+                score_popup_time = 30 
+                
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
                 flake_original_x = rand_apple_x               
                 snake_length += 1
@@ -399,13 +431,26 @@ def gameLoop():
 
             elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
                 snd_pickup.play()
+                
                 score_points += apple_value
+                score_popup_value = apple_value
+                score_popup_x = lead_x
+                score_popup_y = lead_y
+                # 30 is about 1 sec. at 30 fps
+                score_popup_time = 30
+                
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
                 flake_original_x = rand_apple_x               
                 snake_length += 1
                 if snake_move_speed < block_size:
                     snake_move_speed += 0.5
 
+        # display eaten apple value in popup
+        if score_popup_time > 0:
+            text = font_small.render(str(score_popup_value), True, white)
+            gameDisplay.blit(text, [score_popup_x, score_popup_y])
+            score_popup_time -= 1
+            
         # calculate and display score based on snake length
         score(score_points)
 
