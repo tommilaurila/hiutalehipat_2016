@@ -34,13 +34,13 @@ pygame.display.set_icon(game_icon)
 
 img_snakehead = pygame.image.load('snakehead_green.png')
 img_snakebody = pygame.image.load('snakebody_green.png')
-img_snakebutt = pygame.image.load('snakebutt.png')
 
 img_snowflake_white = pygame.image.load('snowflake_white.png')
 img_snowflake_golden = pygame.image.load('snowflake_golden.png')
 
 img_background = pygame.image.load('background4.png')
-img_fslogo = pygame.image.load('fslogo.png')
+img_fslogo = pygame.image.load('logosnake_500.png')
+img_fslogo_text = pygame.image.load('fslogo_text.png')
 img_snowline = pygame.image.load('snowline.png')
 
 img_moon = pygame.image.load('kuu_96.png')
@@ -54,9 +54,10 @@ clock = pygame.time.Clock()
 
 snake_dir = "right"
 
-font_small = pygame.font.SysFont(None, 24)
-font_medium = pygame.font.SysFont(None, 34)
-font_large = pygame.font.SysFont(None, 44)
+# font by Joanne Taylor (qabbojo@yahoo.com)
+font_small = pygame.font.Font('Qarmic_sans_Abridged.ttf',20)
+font_medium = pygame.font.Font('Qarmic_sans_Abridged.ttf',34)
+font_large = pygame.font.Font('Qarmic_sans_Abridged.ttf',54)
 
 # () = tuple
 # [] = list
@@ -113,16 +114,12 @@ def generate_apple():
 def snake(snake_move_speed, block_size, snakelist):
     if snake_dir == "right":
         head = pygame.transform.rotate(img_snakehead, 270)
-        butt = pygame.transform.rotate(img_snakebutt, 270)
     if snake_dir == "left":
         head = pygame.transform.rotate(img_snakehead, 90)
-        butt = pygame.transform.rotate(img_snakebutt, 90)
     if snake_dir == "up":
         head = img_snakehead
-        butt = img_snakebutt
     if snake_dir == "down":
         head = pygame.transform.rotate(img_snakehead, 180)
-        butt = pygame.transform.rotate(img_snakebutt, 180)
 
     # draw snake head
     gameDisplay.blit(head, (snakelist[-1][0], snakelist[-1][1]))
@@ -132,9 +129,6 @@ def snake(snake_move_speed, block_size, snakelist):
         gameDisplay.blit(img_snakebody, (x_y[0], x_y[1]))
         #pygame.draw.rect(gameDisplay, snakegreen, [x_y[0], x_y[1], block_size, block_size])
 
-    # draw snake butt
-##    if(len(snakelist) > 1):
-##        gameDisplay.blit(butt, (snakelist[0][0], snakelist[0][1]))
 
 
 def text_objects(text, color, size):
@@ -181,19 +175,26 @@ def game_intro():
                 if event.key == pygame.K_q:
                     pygame.quit()
                     quit()
-                    
-        gameDisplay.blit(img_background, (0, 0))
-        gameDisplay.blit(img_fslogo, (100, 10))      
 
-        message_to_screen("Sieppaa lumihiutaleita ennen kun ne putoavat maahan ja",
-                          white,
-                          150,
-                          "small")
-        message_to_screen("kasvattavat lumihankea. Varo lumihankea ja ruudun reunoja.",
-                          white,
-                          180,
-                          "small")
-        message_to_screen("C = uusi peli, P = tauko, Q = lopetus",
+        # draw background
+        gameDisplay.blit(img_background, (0, 0))
+
+        # draw snake image
+        gameDisplay.blit(img_fslogo, (150, 150))
+        gameDisplay.blit(img_fslogo_text, (280, 135))
+
+        # draw instructions
+        gameDisplay.blit(img_snowflake_white, (600, 15))
+        text = font_small.render("+10  +", True, white)
+        gameDisplay.blit(text, [630,15])
+        gameDisplay.blit(img_snakebody, (695, 20))
+        
+        gameDisplay.blit(img_snowflake_golden, (600, 55))
+        text = font_small.render("+50  +", True, white)
+        gameDisplay.blit(text, [630,55])
+        gameDisplay.blit(img_snakebody, (695, 60))
+
+        message_to_screen("C = Play, P = Pause, Q = Quit",
                           yellow,
                           230,
                           "small")
@@ -393,16 +394,15 @@ def gameLoop():
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
                 flake_original_x = rand_apple_x               
                 snake_length += 1
-                #tick_rate += 1
                 if snake_move_speed <= block_size:
                     snake_move_speed += 0.5
+
             elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
                 snd_pickup.play()
                 score_points += apple_value
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
                 flake_original_x = rand_apple_x               
                 snake_length += 1
-                #tick_rate += 1
                 if snake_move_speed < block_size:
                     snake_move_speed += 0.5
 
