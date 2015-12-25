@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # snake game based on thenewboston's pygame tutorials (search on Youtube)
 import pygame
 import time
@@ -9,12 +8,8 @@ pygame.init()
 white = (255,255,255)
 black = (0,0,0)
 red = (255,0,0)
-blue = (0,0,255)
-green = (0,255,0)
 yellow = (255,255,0)
-skyblue = (40,195,255)
 snow = (115,115,167)
-snakegreen = (0,130,12)
 
 display_width = 800
 display_height = 600
@@ -47,6 +42,7 @@ img_moon = pygame.image.load('kuu_96.png')
 
 btn_play = pygame.image.load('btn_play.png')
 btn_stop = pygame.image.load('btn_stop.png')
+btn_credits = pygame.image.load('btn_credits.png')
 
 # sound effect made on bfxr.net
 snd_pickup = pygame.mixer.Sound('pickup.wav')
@@ -64,32 +60,6 @@ font_large = pygame.font.Font('Qarmic_sans_Abridged.ttf',54)
 
 # () = tuple
 # [] = list
-
-
-def pause():
-    paused = True
-
-    while paused:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_c:
-                    paused = False
-                elif event.key == pygame.K_q:
-                    pygame.quit()
-                    quit()
-        gameDisplay.fill(white)
-        message_to_screen("Paused",
-                          black,
-                          -100,
-                          size="large")
-        message_to_screen("Press C to continue or Q to quit",
-                          black,
-                          -70)
-        pygame.display.update()
-        clock.tick(5)
 
 
 def score(score):
@@ -149,6 +119,77 @@ def message_to_screen(msg, color, y_displace=0, size="small"):
     text_surf, text_rect = text_objects(msg, color, size)
     text_rect.center = (display_width / 2), (display_height / 2) + y_displace
     gameDisplay.blit(text_surf, text_rect)
+
+
+def game_credits():
+    # intro music by http://freesound.org/people/djgriffin/sounds/251289/
+    pygame.mixer.music.load('djgriffin.wav')
+    pygame.mixer.music.play(-1)   
+    
+    show_credits = True
+
+    while show_credits:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_c:
+                    show_credits = False
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    quit()
+            if event.type == pygame.MOUSEBUTTONUP:
+                pos = pygame.mouse.get_pos()
+                # play button
+                if pos[0] > 410 and pos[0] < 410+96 and pos[1] > 515 and pos[1] < 515+57:
+                    gameLoop()
+                # stop button
+                if pos[0] > 285 and pos[0] < 285+96 and pos[1] > 515 and pos[1] < 515+57:
+                    pygame.quit()
+                    quit()
+                
+        # draw background
+        gameDisplay.blit(img_background, (0, 0))
+
+        # draw credits
+        message_to_screen("Thanks to",
+                          red,
+                          -250,
+                          size="large")
+        message_to_screen("Openclipart.org (most of the graphics)",
+                          yellow,
+                          -180,
+                          size="small")
+        message_to_screen("DJGriffin/Freesound.org (intro music)",
+                          yellow,
+                          -150,
+                          size="small")
+        message_to_screen("Joshuaempyre/Freesound.org (game music)",
+                          yellow,
+                          -120,
+                          size="small")
+        message_to_screen("Joanne Taylor / qabbojo@yahoo.com (game font)",
+                          yellow,
+                          -90,
+                          size="small")
+        message_to_screen("Harrison/sentdex (snake game idea)",
+                          yellow,
+                          -60,
+                          size="small")
+        message_to_screen("Bfxr.net (for sound effects)",
+                          yellow,
+                          -30,
+                          size="small")
+
+        # draw buttons
+        gameDisplay.blit(btn_play, (410, 515))
+        gameDisplay.blit(btn_stop, (285, 515))
+
+        pygame.display.update()
+        clock.tick(20)
+
+    pygame.mixer.music.stop()
 
 
 def game_intro():
@@ -282,6 +323,7 @@ def gameLoop():
             # draw buttons
             gameDisplay.blit(btn_play, (410, 360))
             gameDisplay.blit(btn_stop, (285, 360))
+            gameDisplay.blit(btn_credits, (352, 450))
             
             message_to_screen("Game Over",
                               red,
@@ -314,6 +356,9 @@ def gameLoop():
                     if pos[0] > 285 and pos[0] < 285+96 and pos[1] > 360 and pos[1] < 360+57:
                         gameOver = False
                         gameExit = True
+                    # credits button
+                    if pos[0] > 352 and pos[0] < 352+96 and pos[1] > 450 and pos[1] < 450+57:
+                        game_credits()
             
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
