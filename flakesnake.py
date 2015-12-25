@@ -418,7 +418,7 @@ def gameLoop():
                 score_popup_x = lead_x
                 score_popup_y = lead_y
                 # 30 is about 1 sec. at 30 fps
-                score_popup_time = 30 
+                score_popup_time = 30
                 
                 rand_apple_x, rand_apple_y, apple_value = generate_apple()
                 apple_y_pos = rand_apple_y
