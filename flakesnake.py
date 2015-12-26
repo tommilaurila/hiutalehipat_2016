@@ -46,6 +46,10 @@ btn_credits = pygame.image.load('btn_credits.png')
 
 # sound effect made on bfxr.net
 snd_pickup = pygame.mixer.Sound('pickup.wav')
+
+# sound effect from http://freesound.org/people/jivatma07/sounds/173858/
+snd_pickup_bonus = pygame.mixer.Sound('bonusflake.wav')
+
 # sound effect from http://freesound.org/people/fins/sounds/171673/
 snd_failure = pygame.mixer.Sound('failure.wav')
 
@@ -63,7 +67,7 @@ font_large = pygame.font.Font('Qarmic_sans_Abridged.ttf',54)
 
 
 def score(score):
-    text = font_small.render("Pisteet: " + str(score), True, white)
+    text = font_small.render("Score: " + str(score), True, white)
     gameDisplay.blit(text, [4,4])
 
 
@@ -159,13 +163,17 @@ def game_credits():
                           size="large")
         message_to_screen("Openclipart.org (most of the graphics)",
                           yellow,
-                          -180,
+                          -210,
                           size="small")
         message_to_screen("DJGriffin/Freesound.org (intro music)",
                           yellow,
-                          -150,
+                          -180,
                           size="small")
         message_to_screen("Joshuaempyre/Freesound.org (game music)",
+                          yellow,
+                          -150,
+                          size="small")
+        message_to_screen("Jivatma07/Freesound.org (sound effect)",
                           yellow,
                           -120,
                           size="small")
@@ -380,12 +388,8 @@ def gameLoop():
                     snake_dir = "down"
                     lead_y_change = snake_move_speed
                     lead_x_change = 0
-                elif event.key == pygame.K_p:
-                    pause()
-                elif event.key == pygame.K_z:
-                    print("snakelist: " + str(snakelist) + " length: " + str(snake_length))
 
-        # snake crosses boundaries (2x block size because we are using the old bottom line value)
+        # snake crosses boundaries
         if lead_x >= display_width or lead_x < 0 or lead_y >= bottom_line - block_size or lead_y < 0:
             snd_failure.play()
             pygame.mixer.music.stop()
@@ -456,7 +460,10 @@ def gameLoop():
         # eat apple = move it to new position
         if lead_x > rand_apple_x and lead_x < rand_apple_x + apple_size or lead_x + apple_size > rand_apple_x and lead_x + block_size < rand_apple_x + apple_size:
             if lead_y > apple_y_pos and lead_y < apple_y_pos + apple_size:
-                snd_pickup.play()
+                if apple_value == apple_value_plain:
+                    snd_pickup.play()
+                elif apple_value == apple_value_bonus:
+                    snd_pickup_bonus.play()
                 
                 score_points += apple_value
                 score_popup_value = apple_value
@@ -473,7 +480,10 @@ def gameLoop():
                     snake_move_speed += 0.5
 
             elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
-                snd_pickup.play()
+                if apple_value == apple_value_plain:
+                    snd_pickup.play()
+                elif apple_value == apple_value_bonus:
+                    snd_pickup_bonus.play()
                 
                 score_points += apple_value
                 score_popup_value = apple_value
@@ -491,8 +501,13 @@ def gameLoop():
 
         # display eaten apple value in popup
         if score_popup_time > 0:
-            text = font_small.render(str(score_popup_value), True, white)
-            gameDisplay.blit(text, [score_popup_x, score_popup_y])
+            if score_popup_value == apple_value_plain:
+                text = font_small.render(str(score_popup_value), True, white)
+                gameDisplay.blit(text, [score_popup_x, score_popup_y])
+            elif score_popup_value == apple_value_bonus:
+                text = font_small.render(str(score_popup_value), True, yellow)
+                gameDisplay.blit(text, [score_popup_x, score_popup_y])
+                
             score_popup_time -= 1
             
         # calculate and display score based on snake length
