@@ -20,7 +20,7 @@ apple_y_pos = 0
 apple_value_plain = 10
 apple_value_bonus = 50
 
-gameDisplay = pygame.display.set_mode((display_width, display_height))
+gameDisplay = pygame.display.set_mode((display_width, display_height)) #, pygame.FULLSCREEN|pygame.HWSURFACE|pygame.DOUBLEBUF)
 pygame.display.set_caption('FlakeSnake')
 
 # graphics selfmade or taken from openclipart.org
@@ -67,8 +67,8 @@ font_large = pygame.font.Font('Qarmic_sans_Abridged.ttf',54)
 
 
 def score(score):
-    text = font_small.render("Score: " + str(score), True, white)
-    gameDisplay.blit(text, [4,4])
+    text_surf, text_rect = text_objects("Score: " + str(score), white, "small")
+    gameDisplay.blit(text_surf, text_rect)
 
 
 def generate_apple():
@@ -215,7 +215,24 @@ def game_intro():
     flake_dir = "right"
     flake_original_x = rand_apple_x
     flake_max_x_displacement = 30
-    
+
+    # draw background
+    gameDisplay.blit(img_background, (0, 0))
+
+    # draw snake image
+    gameDisplay.blit(img_fslogo, (150, 150))
+    gameDisplay.blit(img_fslogo_text, (330, 85))
+
+    # draw buttons
+    gameDisplay.blit(btn_play, (410, 515))
+    gameDisplay.blit(btn_stop, (285, 515))
+
+    # store a 'clean' image of the background
+    copy_of_gd = gameDisplay.copy()
+
+    # update whole screen only once here
+    pygame.display.update()
+
     while intro:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -227,6 +244,8 @@ def game_intro():
                 if event.key == pygame.K_q:
                     pygame.quit()
                     quit()
+                if event.key == pygame.K_z:
+                    print("fps " + str(clock.get_fps()))
             if event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
                 # play button
@@ -236,18 +255,6 @@ def game_intro():
                 if pos[0] > 285 and pos[0] < 285+96 and pos[1] > 515 and pos[1] < 515+57:
                     pygame.quit()
                     quit()
-                
-
-        # draw background
-        gameDisplay.blit(img_background, (0, 0))
-
-        # draw snake image
-        gameDisplay.blit(img_fslogo, (150, 150))
-        gameDisplay.blit(img_fslogo_text, (330, 85))
-
-        # draw buttons
-        gameDisplay.blit(btn_play, (410, 515))
-        gameDisplay.blit(btn_stop, (285, 515))
 
         # draw apple zig-zag falling
         if flake_dir == "right" and rand_apple_x < flake_original_x + flake_max_x_displacement:
@@ -259,17 +266,24 @@ def game_intro():
         elif flake_dir == "left" and rand_apple_x <= flake_original_x - flake_max_x_displacement:
             flake_dir = "right"
 
-        # draw apple
-        gameDisplay.blit(img_snowflake_white, (rand_apple_x, apple_y_pos))            
+        # take a copy from a 'clean' background (copy_of_gd) and blit it to cover old apple image
+        dest_rect = pygame.Rect(rand_apple_x-apple_fall_speed, apple_y_pos-apple_fall_speed, apple_size+2*apple_fall_speed, apple_size+2*apple_fall_speed)
+        gameDisplay.blit(copy_of_gd, dest_rect, dest_rect)
+
+        # draw new apple image
+        gameDisplay.blit(img_snowflake_white, (rand_apple_x, apple_y_pos))
+        
+        # update only drawn area
+        pygame.display.update(dest_rect)
+
+        clock.tick(20)
+
         apple_y_pos += apple_fall_speed
         
         # if apple falls out of screen, generate new apple
         if apple_y_pos > display_height:  
             rand_apple_x, apple_y_pos, apple_value = generate_apple()
             flake_original_x = rand_apple_x
-
-        pygame.display.update()
-        clock.tick(20)
 
     pygame.mixer.music.stop()
 
@@ -322,11 +336,20 @@ def gameLoop():
     flake_dir = "right"
     flake_original_x = rand_apple_x
     flake_max_x_displacement = 30
+
+    # draw background
+    gameDisplay.blit(img_background, (0,0))
+
+    # take a 'clean' copy of the background
+    copy_of_gd = gameDisplay.copy()
+
+    # update whole screen only once here
+    pygame.display.update()
     
     while not gameExit:
         while gameOver == True:
             # draw background
-            gameDisplay.blit(img_background, (0, 0))
+            # gameDisplay.blit(img_background, (0, 0))
 
             # draw buttons
             gameDisplay.blit(btn_play, (410, 360))
@@ -355,6 +378,9 @@ def gameLoop():
                         gameOver = False
                     if event.key == pygame.K_c:
                         gameLoop()
+                    if event.key == pygame.K_z:
+                        print("fps " + str(clock.get_fps()))
+                    
                 if event.type == pygame.MOUSEBUTTONUP:
                     pos = pygame.mouse.get_pos()
                     # play button
@@ -388,7 +414,9 @@ def gameLoop():
                     snake_dir = "down"
                     lead_y_change = snake_move_speed
                     lead_x_change = 0
-
+                elif event.key == pygame.K_z:
+                    print("fps " + str(clock.get_fps()))
+                    
         # snake crosses boundaries
         if lead_x >= display_width or lead_x < 0 or lead_y >= bottom_line - block_size or lead_y < 0:
             snd_failure.play()
@@ -397,6 +425,17 @@ def gameLoop():
 
         lead_x += lead_x_change
         lead_y += lead_y_change
+
+        # draw slowly moving moon
+        # take a copy from a 'clean' background (copy_of_gd) and blit it to cover old moon image
+        # moon y is hardcoded to 48
+##        dest_rect = pygame.Rect(moon_x-1, 48-1, 96+2, 96+2)
+##        gameDisplay.blit(copy_of_gd, dest_rect, dest_rect)
+##        gameDisplay.blit(img_moon, (moon_x, 48))
+##        moon_x += 0.016
+        
+        # update only drawn area
+##        pygame.display.update(dest_rect)
 
         # draw apple zig-zag falling
         if flake_dir == "right" and rand_apple_x < flake_original_x + flake_max_x_displacement:
@@ -408,18 +447,21 @@ def gameLoop():
         elif flake_dir == "left" and rand_apple_x <= flake_original_x - flake_max_x_displacement:
             flake_dir = "right"
 
-        # draw background
-        gameDisplay.blit(img_background, (0,0))
-
-        # draw slowly moving moon
-        gameDisplay.blit(img_moon, (moon_x, 48))
-        moon_x += 0.016
-
         # change apple image according to value
         if apple_value == apple_value_plain:
             gameDisplay.blit(img_snowflake_white, (rand_apple_x, apple_y_pos))
         elif apple_value == apple_value_bonus:
             gameDisplay.blit(img_snowflake_golden, (rand_apple_x, apple_y_pos))
+
+        # take a copy from a 'clean' background (copy_of_gd) and blit it to cover old apple image
+        dest_rect = pygame.Rect(rand_apple_x-apple_fall_speed, apple_y_pos-apple_fall_speed, apple_size+2*apple_fall_speed, apple_size+2*apple_fall_speed)
+        gameDisplay.blit(copy_of_gd, dest_rect, dest_rect)
+
+        # draw new apple image
+        gameDisplay.blit(img_snowflake_white, (rand_apple_x, apple_y_pos))
+        
+        # update only drawn area
+        pygame.display.update(dest_rect)
             
         apple_y_pos += apple_fall_speed
         
@@ -454,12 +496,60 @@ def gameLoop():
                 pygame.mixer.music.stop()
                 gameOver = True
 
-        # draw snake
-        snake(snake_move_speed, block_size, snakelist)
+## -------------- begin draw snake ----------------------
+##        snake(snake_move_speed, block_size, snakelist)
+        if snake_dir == "right":
+            head = pygame.transform.rotate(img_snakehead, 270)
+        elif snake_dir == "left":
+            head = pygame.transform.rotate(img_snakehead, 90)
+        elif snake_dir == "up":
+            head = img_snakehead
+        elif snake_dir == "down":
+            head = pygame.transform.rotate(img_snakehead, 180)
+
+        # erase old snake
+        for x_y in snakelist[:-1]:
+            dest_rect = pygame.Rect(x_y[0]-snake_move_speed, x_y[1]-snake_move_speed, block_size+2*snake_move_speed, block_size+2*snake_move_speed)
+            gameDisplay.blit(copy_of_gd, dest_rect, dest_rect)
+            #gameDisplay.blit(img_snakebody, (x_y[0], x_y[1]))
+
+        snake_rects = []
+
+        # draw snake head
+        # take a copy from a 'clean' background (copy_of_gd) and blit it to cover old apple image
+        if snake_dir == "right":
+            dest_rect = pygame.Rect(snakelist[-1][0]-snake_move_speed, snakelist[-1][1], block_size+snake_move_speed, block_size)
+        elif snake_dir == "left":
+            dest_rect = pygame.Rect(snakelist[-1][0], snakelist[-1][1], block_size+snake_move_speed, block_size)
+        elif snake_dir == "up":
+            dest_rect = pygame.Rect(snakelist[-1][0], snakelist[-1][1], block_size, block_size+snake_move_speed)
+        elif snake_dir == "down":
+            dest_rect = pygame.Rect(snakelist[-1][0], snakelist[-1][1]-snake_move_speed, block_size, block_size+snake_move_speed)
+            
+        gameDisplay.blit(copy_of_gd, dest_rect, dest_rect)
+        gameDisplay.blit(head, (snakelist[-1][0], snakelist[-1][1]))
+
+        # add head to snake rects list
+        snake_rects.append(dest_rect)
+
+        # draw new snake body parts
+        for x_y in snakelist[:-1]:
+            snake_rects.append(pygame.Rect(x_y[0]-snake_move_speed, x_y[1]-snake_move_speed, block_size+2*snake_move_speed, block_size+2*snake_move_speed))
+            gameDisplay.blit(img_snakebody, (x_y[0], x_y[1]))
+
+        # update drawn snake on screen
+        pygame.display.update(snake_rects)
+
+## ---------------- end draw snake ---------------------
 
         # eat apple = move it to new position
         if lead_x > rand_apple_x and lead_x < rand_apple_x + apple_size or lead_x + apple_size > rand_apple_x and lead_x + block_size < rand_apple_x + apple_size:
             if lead_y > apple_y_pos and lead_y < apple_y_pos + apple_size:
+                # erase eaten apple
+                apple_erase_rect = pygame.Rect(rand_apple_x-apple_fall_speed, apple_y_pos-apple_fall_speed, apple_size+2*apple_fall_speed, apple_size+2*apple_fall_speed)
+                gameDisplay.blit(copy_of_gd, apple_erase_rect, apple_erase_rect)
+                pygame.display.update(apple_erase_rect)
+                
                 if apple_value == apple_value_plain:
                     snd_pickup.play()
                 elif apple_value == apple_value_bonus:
@@ -476,10 +566,16 @@ def gameLoop():
                 apple_y_pos = rand_apple_y
                 flake_original_x = rand_apple_x               
                 snake_length += 1
+                print("snake length: " + str(snake_length) + " fps: " + str(clock.get_fps()))
                 if snake_move_speed <= block_size:
                     snake_move_speed += 0.5
 
             elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
+                # erase eaten apple
+                apple_erase_rect = pygame.Rect(rand_apple_x-apple_fall_speed, apple_y_pos-apple_fall_speed, apple_size+2*apple_fall_speed, apple_size+2*apple_fall_speed)
+                gameDisplay.blit(copy_of_gd, apple_erase_rect, apple_erase_rect)
+                pygame.display.update(apple_erase_rect)
+                
                 if apple_value == apple_value_plain:
                     snd_pickup.play()
                 elif apple_value == apple_value_bonus:
@@ -496,6 +592,7 @@ def gameLoop():
                 apple_y_pos = rand_apple_y
                 flake_original_x = rand_apple_x               
                 snake_length += 1
+                print("snake length: " + str(snake_length) + " fps: " + str(clock.get_fps()))
                 if snake_move_speed < block_size:
                     snake_move_speed += 0.5
 
@@ -510,10 +607,13 @@ def gameLoop():
                 
             score_popup_time -= 1
             
-        # calculate and display score based on snake length
-        score(score_points)
+        # calculate and display score based on snake length (this is done every frame!)
+        text_surf, text_rect = text_objects("Score: " + str(score_points), white, "small")
+        gameDisplay.blit(copy_of_gd, text_rect, text_rect)
+        gameDisplay.blit(text_surf, text_rect)
+        pygame.display.update(text_rect)
+        #score(score_points)
 
-        pygame.display.update()
         clock.tick(tick_rate)
 
     # Here ends while not gameExit
