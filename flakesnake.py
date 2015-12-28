@@ -69,16 +69,22 @@ font_large = pygame.font.Font('Qarmic_sans_Abridged.ttf',54)
 # [] = list
 
 
-def score(score):
-    text_surf, text_rect = text_objects("Score: " + str(score), white, "small")
-    gameDisplay.blit(text_surf, text_rect)
-
-
-def generate_apple():
+# take snake head x as parameter, not to generate next apple too close to the previous one
+# the y coordinate is generated randomly at the top half of the screen
+def generate_apple(lead_x):
     apple_value = apple_value_plain
+
+    # default values for min and max x
+    min_x = apple_size
+    max_x = display_width-apple_size
+
+    if(lead_x < display_width/2):
+        min_x = round(lead_x + 2*apple_size)
+    elif(lead_x >= display_width/2):
+        max_x = round(lead_x - 2*apple_size)
     
     # generate new apple random position (at top half of screen)
-    rand_apple_x = round(random.randrange(apple_size, display_width-apple_size))
+    rand_apple_x = round(random.randrange(min_x, max_x))
     rand_apple_y = round(random.randrange(0, display_height/2))
 
     # is the new apple a bonus apple?
@@ -89,6 +95,19 @@ def generate_apple():
         apple_value = apple_value_bonus
 
     return rand_apple_x, rand_apple_y, apple_value
+
+
+def eat_apple(rand_apple_x, apple_y_pos, apple_fall_speed, apple_value, copy_of_gd):
+    # play eat sound
+    if apple_value == apple_value_plain:
+        snd_pickup.play()
+    elif apple_value == apple_value_bonus:
+        snd_pickup_bonus.play()
+        
+    # erase eaten apple
+    apple_erase_rect = pygame.Rect(rand_apple_x-apple_fall_speed, apple_y_pos-apple_fall_speed, apple_size+2*apple_fall_speed, apple_size+2*apple_fall_speed)
+    gameDisplay.blit(copy_of_gd, apple_erase_rect, apple_erase_rect)
+    pygame.display.update(apple_erase_rect)
 
 
 def snake(snake_move_speed, block_size, snakelist):
@@ -126,6 +145,23 @@ def message_to_screen(msg, color, y_displace=0, size="small"):
     text_surf, text_rect = text_objects(msg, color, size)
     text_rect.center = (display_width / 2), (display_height / 2) + y_displace
     gameDisplay.blit(text_surf, text_rect)
+
+
+def show_score(score_points, copy_of_gd):
+    text_surf, text_rect = text_objects("Score: " + str(score_points), white, "small")
+    gameDisplay.blit(copy_of_gd, text_rect, text_rect)
+    gameDisplay.blit(text_surf, text_rect)
+    pygame.display.update(text_rect)
+
+
+def show_popup_score(score_popup_x, score_popup_y, apple_value):
+    popup_color = white
+    if apple_value == apple_value_bonus:
+        popup_color = yellow
+        
+    score_surf, score_surf_rect = text_objects(str(apple_value), popup_color, "small")
+    gameDisplay.blit(score_surf, [score_popup_x, score_popup_y])
+    pygame.display.update(pygame.Rect(score_popup_x, score_popup_y, score_surf_rect[2], score_surf_rect[3])) 
 
 
 def game_credits():
@@ -211,8 +247,8 @@ def game_intro():
     intro = True
     apple_fall_speed = 2
 
-    # draw falling flakes
-    rand_apple_x, rand_apple_y, apple_value = generate_apple()
+    # draw falling flakes at random places
+    rand_apple_x, rand_apple_y, apple_value = generate_apple(random.randrange(apple_size, display_width-apple_size))
     apple_y_pos = rand_apple_y + apple_fall_speed
     
     flake_dir = "right"
@@ -285,7 +321,7 @@ def game_intro():
         
         # if apple falls out of screen, generate new apple
         if apple_y_pos > display_height:  
-            rand_apple_x, apple_y_pos, apple_value = generate_apple()
+            rand_apple_x, apple_y_pos, apple_value = generate_apple(random.randrange(apple_size, display_width-apple_size))
             flake_original_x = rand_apple_x
 
     pygame.mixer.music.stop()
@@ -335,7 +371,7 @@ def gameLoop():
     snake_length = 1
 
     # rand_apple_x, rand_apple_y = rand_apple_gen()
-    rand_apple_x, rand_apple_y, apple_value = generate_apple()
+    rand_apple_x, rand_apple_y, apple_value = generate_apple(random.randrange(apple_size, display_width-apple_size))
     apple_y_pos = rand_apple_y + apple_fall_speed
 
     flake_dir = "right"
@@ -480,6 +516,9 @@ def gameLoop():
             if missed_apples % 5 == 0:
                 bottom_line -= snow_grow_height
 
+                if bottom_line < 0:
+                    bottom_line = 0
+
                 # draw bottom line snow and snow edge graphics
                 snow_rect = pygame.Rect(0, bottom_line, display_width, display_height-bottom_line)
                 gameDisplay.fill(snow, snow_rect)
@@ -491,7 +530,7 @@ def gameLoop():
                 copy_of_gd.blit(gameDisplay, snow_rect, snow_rect)
                 
             # generate new apple
-            rand_apple_x, apple_y_pos, apple_value = generate_apple()
+            rand_apple_x, apple_y_pos, apple_value = generate_apple(lead_x)
             flake_original_x = rand_apple_x
 
         # the snake
@@ -524,12 +563,10 @@ def gameLoop():
         for x_y in snakelist[:-1]:
             dest_rect = pygame.Rect(x_y[0]-snake_move_speed, x_y[1]-snake_move_speed, block_size+2*snake_move_speed, block_size+2*snake_move_speed)
             gameDisplay.blit(copy_of_gd, dest_rect, dest_rect)
-            #gameDisplay.blit(img_snakebody, (x_y[0], x_y[1]))
 
         snake_rects = []
 
         # draw snake head
-        # take a copy from a 'clean' background (copy_of_gd) and blit it to cover old apple image
         if snake_dir == "right":
             dest_rect = pygame.Rect(snakelist[-1][0]-snake_move_speed, snakelist[-1][1], block_size+snake_move_speed, block_size)
         elif snake_dir == "left":
@@ -556,80 +593,65 @@ def gameLoop():
 ## ---------------- end draw snake ---------------------
 
         # eat apple = move it to new position
-        if lead_x > rand_apple_x and lead_x < rand_apple_x + apple_size or lead_x + apple_size > rand_apple_x and lead_x + block_size < rand_apple_x + apple_size:
+        if lead_x > rand_apple_x and lead_x < rand_apple_x + apple_size or lead_x + apple_size > rand_apple_x and lead_x + apple_size < rand_apple_x + apple_size:
             if lead_y > apple_y_pos and lead_y < apple_y_pos + apple_size:
                 # erase eaten apple
-                apple_erase_rect = pygame.Rect(rand_apple_x-apple_fall_speed, apple_y_pos-apple_fall_speed, apple_size+2*apple_fall_speed, apple_size+2*apple_fall_speed)
-                gameDisplay.blit(copy_of_gd, apple_erase_rect, apple_erase_rect)
-                pygame.display.update(apple_erase_rect)
-                
-                if apple_value == apple_value_plain:
-                    snd_pickup.play()
-                elif apple_value == apple_value_bonus:
-                    snd_pickup_bonus.play()
+                eat_apple(rand_apple_x, apple_y_pos, apple_fall_speed, apple_value, copy_of_gd)
                 
                 score_points += apple_value
                 score_popup_value = apple_value
                 score_popup_x = lead_x
                 score_popup_y = lead_y
-                # 30 is about 1 sec. at 30 fps
-                score_popup_time = 30
+                # 15 is about 0.5 sec. at 30 fps
+                score_popup_time = 15
                 popup_erased = False
                 
-                rand_apple_x, rand_apple_y, apple_value = generate_apple()
+                # generate new apple coordinates
+                rand_apple_x, rand_apple_y, apple_value = generate_apple(lead_x)               
                 apple_y_pos = rand_apple_y
-                flake_original_x = rand_apple_x               
+                flake_original_x = rand_apple_x
+                
                 snake_length += 1
                 print("snake length: " + str(snake_length) + " fps: " + str(clock.get_fps()))
+
+                # accelerate snake
                 if snake_move_speed <= block_size:
                     snake_move_speed += 0.5
 
-            elif lead_y + block_size > apple_y_pos and lead_y + block_size < apple_y_pos + apple_size:
+            elif lead_y + apple_size > apple_y_pos and lead_y + apple_size < apple_y_pos + apple_size:
                 # erase eaten apple
-                apple_erase_rect = pygame.Rect(rand_apple_x-apple_fall_speed, apple_y_pos-apple_fall_speed, apple_size+2*apple_fall_speed, apple_size+2*apple_fall_speed)
-                gameDisplay.blit(copy_of_gd, apple_erase_rect, apple_erase_rect)
-                pygame.display.update(apple_erase_rect)
-                
-                if apple_value == apple_value_plain:
-                    snd_pickup.play()
-                elif apple_value == apple_value_bonus:
-                    snd_pickup_bonus.play()
+                eat_apple(rand_apple_x, apple_y_pos, apple_fall_speed, apple_value, copy_of_gd)
                 
                 score_points += apple_value
                 score_popup_value = apple_value
                 score_popup_x = lead_x
                 score_popup_y = lead_y
-                # 30 is about 1 sec. at 30 fps
-                score_popup_time = 30
+                # 15 is about 0.5 sec. at 30 fps
+                score_popup_time = 15
                 popup_erased = False
                 
-                rand_apple_x, rand_apple_y, apple_value = generate_apple()
+                # generate new apple coordinates
+                rand_apple_x, rand_apple_y, apple_value = generate_apple(lead_x)              
                 apple_y_pos = rand_apple_y
-                flake_original_x = rand_apple_x               
+                flake_original_x = rand_apple_x
+                
                 snake_length += 1
                 print("snake length: " + str(snake_length) + " fps: " + str(clock.get_fps()))
+
+                # accelerate snake
                 if snake_move_speed < block_size:
                     snake_move_speed += 0.5
 
         # display eaten apple value in popup
         if score_popup_time > 0:
-            if score_popup_value == apple_value_plain:
-                # generate surface from score text
-                score_surf, score_surf_rect = text_objects(str(apple_value_plain), white, "small")
-                gameDisplay.blit(score_surf, [score_popup_x, score_popup_y])
-                # update score to screen, [2] and [3] are the score rect's width and height
-                pygame.display.update(pygame.Rect(score_popup_x, score_popup_y, score_surf_rect[2], score_surf_rect[3]))
-
-            elif score_popup_value == apple_value_bonus:
-                score_surf, score_surf_rect = text_objects(str(apple_value_bonus), yellow, "small")
-                gameDisplay.blit(score_surf, [score_popup_x, score_popup_y])
-                pygame.display.update(pygame.Rect(score_popup_x, score_popup_y, score_surf_rect[2], score_surf_rect[3]))           
+            show_popup_score(score_popup_x, score_popup_y, score_popup_value)       
             
         # reduce one from popup display time (stop at -100 to not continue forever)
         if score_popup_time > -100:
             score_popup_time -= 1
 
         # when popup display time hits zero, erase the popup
+        # TODO: this fails if the next apple is eaten before the previous popup is erased (old popup remains on screen)
         if popup_erased == False and score_popup_time < 1:
             score_surf, score_surf_rect = text_objects(str(apple_value_bonus), white, "small")
             popup_erase_rect = pygame.Rect(score_popup_x, score_popup_y, score_surf_rect[2], score_surf_rect[3])
@@ -637,12 +659,9 @@ def gameLoop():
             pygame.display.update(pygame.Rect(score_popup_x, score_popup_y, score_surf_rect[2], score_surf_rect[3]))
             popup_erased = True
             
-        # calculate and display score based on snake length (this is done every frame!)
-        text_surf, text_rect = text_objects("Score: " + str(score_points), white, "small")
-        gameDisplay.blit(copy_of_gd, text_rect, text_rect)
-        gameDisplay.blit(text_surf, text_rect)
-        pygame.display.update(text_rect)
-        #score(score_points)
+        # calculate and display score based on snake length (this is done every frame
+        # or else it could get erased by the snake)
+        show_score(score_points, copy_of_gd)
 
         clock.tick(tick_rate)
 
