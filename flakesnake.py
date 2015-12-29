@@ -2,6 +2,11 @@
 import pygame
 import time
 import random
+import RPi.GPIO as GPIO
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setwarnings(False)
+GPIO.setup(7,GPIO.OUT)
 
 pygame.init()
 
@@ -174,12 +179,14 @@ def game_credits():
     while show_credits:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                GPIO.cleanup()
                 pygame.quit()
                 quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_c:
                     show_credits = False
                 if event.key == pygame.K_q:
+                    GPIO.cleanup()
                     pygame.quit()
                     quit()
             if event.type == pygame.MOUSEBUTTONUP:
@@ -189,6 +196,7 @@ def game_credits():
                     gameLoop()
                 # stop button
                 if pos[0] > 285 and pos[0] < 285+96 and pos[1] > 515 and pos[1] < 515+57:
+                    GPIO.cleanup()
                     pygame.quit()
                     quit()
                 
@@ -240,6 +248,9 @@ def game_credits():
 
 
 def game_intro():
+    # turn of external device by default
+    GPIO.output(7, GPIO.LOW)
+    
     # intro music by http://freesound.org/people/djgriffin/sounds/251289/
     pygame.mixer.music.load('djgriffin.wav')
     pygame.mixer.music.play(-1)   
@@ -275,16 +286,19 @@ def game_intro():
     while intro:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                GPIO.cleanup()
                 pygame.quit()
                 quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_c:
                     intro = False
                 if event.key == pygame.K_q:
+                    GPIO.cleanup()
                     pygame.quit()
                     quit()
                 if event.key == pygame.K_z:
-                    print("fps " + str(clock.get_fps()))
+                    print("testing")
+                    
             if event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
                 # play button
@@ -357,7 +371,19 @@ def gameLoop():
     score_popup_value = 0
     score_popup_x = 395
     score_popup_y = 5
+
+    score_100 = False
+    score_200 = False
+    score_300 = False
+    score_500 = False
+    score_700 = False
+    score_1000 = False
+    score_device_time = 0
+    device_on = False
+    
     popup_erased = False
+
+    start_time = pygame.time.get_ticks()
 
     # snake starting point
     lead_x = display_width/4
@@ -599,6 +625,32 @@ def gameLoop():
                 eat_apple(rand_apple_x, apple_y_pos, apple_fall_speed, apple_value, copy_of_gd)
                 
                 score_points += apple_value
+                
+                # every 30 in score_device_time is about 1 sec
+                if score_points >= 100 and score_100 == False:
+                    score_device_time = 30
+                    score_100 = True
+
+                if score_points >= 200 and score_200 == False:
+                    score_device_time = 60
+                    score_200 = True
+
+                if score_points >= 300 and score_300 == False:
+                    score_device_time = 90
+                    score_300 = True
+                    
+                if score_points >= 500 and score_500 == False:
+                    score_device_time = 120
+                    score_500 = True
+
+                if score_points >= 700 and score_700 == False:
+                    score_device_time = 150
+                    score_700 = True
+
+                if score_points >= 1000 and score_1000 == False:
+                    score_device_time = 180
+                    score_1000 = True
+                    
                 score_popup_value = apple_value
                 score_popup_x = lead_x
                 score_popup_y = lead_y
@@ -623,6 +675,31 @@ def gameLoop():
                 eat_apple(rand_apple_x, apple_y_pos, apple_fall_speed, apple_value, copy_of_gd)
                 
                 score_points += apple_value
+
+                if score_points >= 100 and score_100 == False:
+                    score_device_time = 30
+                    score_100 = True
+
+                if score_points >= 200 and score_200 == False:
+                    score_device_time = 60
+                    score_200 = True
+
+                if score_points >= 300 and score_300 == False:
+                    score_device_time = 90
+                    score_300 = True
+
+                if score_points >= 500 and score_500 == False:
+                    score_device_time = 120
+                    score_500 = True
+
+                if score_points >= 700 and score_700 == False:
+                    score_device_time = 150
+                    score_700 = True
+
+                if score_points >= 1000 and score_1000 == False:
+                    score_device_time = 180
+                    score_1000 = True
+                
                 score_popup_value = apple_value
                 score_popup_x = lead_x
                 score_popup_y = lead_y
@@ -663,11 +740,29 @@ def gameLoop():
         # or else it could get erased by the snake)
         show_score(score_points, copy_of_gd)
 
+        # turn on external device for specified amount of time
+        # and then turn it off
+        if score_device_time > 0:
+            if device_on == False:
+                GPIO.output(7, GPIO.HIGH)
+                start_time = pygame.time.get_ticks()
+                device_on = True    
+            if score_device_time > -100:
+                score_device_time -= 1
+
+        elif score_device_time <= 0 and device_on == True:
+            GPIO.output(7, GPIO.LOW)
+            device_on = False
+            device_seconds = pygame.time.get_ticks()-start_time
+            print("device was on for " + repr(device_seconds) + " ms")
+
+        # set max framerate to tick_rate (30 fps)
         clock.tick(tick_rate)
 
     # Here ends while not gameExit
     
     pygame.mixer.music.stop()
+    GPIO.cleanup()
     pygame.quit()
     quit()
 
