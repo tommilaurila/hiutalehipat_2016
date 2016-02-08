@@ -4,9 +4,11 @@ import time
 import random
 import RPi.GPIO as GPIO
 
-GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
-GPIO.setup(7,GPIO.OUT)
+GPIO.setup(17,GPIO.OUT)
+GPIO.setup(27,GPIO.OUT)
+GPIO.setup(22,GPIO.OUT)
 
 pygame.init()
 
@@ -249,7 +251,7 @@ def game_credits():
 
 def game_intro():
     # turn of external device by default
-    GPIO.output(7, GPIO.LOW)
+    GPIO.output(17, GPIO.LOW)
     
     # intro music by http://freesound.org/people/djgriffin/sounds/251289/
     pygame.mixer.music.load('djgriffin.wav')
@@ -341,6 +343,32 @@ def game_intro():
     pygame.mixer.music.stop()
 
 
+# =============== CANDY PAYOUT ====================
+def candyPayout(score_points):
+    # turn on dispenser
+    GPIO.output(17, GPIO.HIGH) #enable
+    GPIO.output(27, GPIO.HIGH) #in 1
+    GPIO.output(22, GPIO.LOW)  #in 2
+
+    start_time = pygame.time.get_ticks()
+
+    doDispense = True
+
+    # just let time pass to allow dispensing of candy
+    while(doDispense):
+        if(pygame.time.get_ticks()-start_time > 60*score_points):
+            doDispense = False
+
+    # turn off dispenser
+    GPIO.output(17, GPIO.LOW) #enable
+    GPIO.output(27, GPIO.LOW) #in 1
+    GPIO.output(22, GPIO.LOW)  #in 2   
+        
+    device_seconds = pygame.time.get_ticks()-start_time
+    print("device was on for " + repr(device_seconds) + " ms")
+
+
+
 # =============== MAIN GAME LOOP ==================
 def gameLoop():
     # music by: https://www.freesound.org/people/joshuaempyre/sounds/251461/
@@ -372,14 +400,14 @@ def gameLoop():
     score_popup_x = 395
     score_popup_y = 5
 
-    score_100 = False
-    score_200 = False
-    score_300 = False
-    score_500 = False
-    score_700 = False
-    score_1000 = False
-    score_device_time = 0
-    device_on = False
+##    score_100 = False
+##    score_200 = False
+##    score_300 = False
+##    score_500 = False
+##    score_700 = False
+##    score_1000 = False
+##    score_device_time = 0
+##    device_on = False
     
     popup_erased = False
 
@@ -414,6 +442,8 @@ def gameLoop():
     pygame.display.update()
     
     while not gameExit:
+        candy_dispensed = False
+        
         while gameOver == True:
             # draw background
             # gameDisplay.blit(img_background, (0, 0))
@@ -433,6 +463,10 @@ def gameLoop():
                               size="medium")
 
             pygame.display.update()
+
+            if(candy_dispensed == False):
+                candyPayout(score_points)
+                candy_dispensed = True
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -460,6 +494,7 @@ def gameLoop():
                     # credits button
                     if pos[0] > 352 and pos[0] < 352+96 and pos[1] > 450 and pos[1] < 450+57:
                         game_credits()
+        ##----- End while game over = true -----
             
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -627,29 +662,29 @@ def gameLoop():
                 score_points += apple_value
                 
                 # every 30 in score_device_time is about 1 sec
-                if score_points >= 100 and score_100 == False:
-                    score_device_time = 30
-                    score_100 = True
-
-                if score_points >= 200 and score_200 == False:
-                    score_device_time = 60
-                    score_200 = True
-
-                if score_points >= 300 and score_300 == False:
-                    score_device_time = 90
-                    score_300 = True
-                    
-                if score_points >= 500 and score_500 == False:
-                    score_device_time = 120
-                    score_500 = True
-
-                if score_points >= 700 and score_700 == False:
-                    score_device_time = 150
-                    score_700 = True
-
-                if score_points >= 1000 and score_1000 == False:
-                    score_device_time = 180
-                    score_1000 = True
+##                if score_points >= 100 and score_100 == False:
+##                    score_device_time = 30
+##                    score_100 = True
+##
+##                if score_points >= 200 and score_200 == False:
+##                    score_device_time = 60
+##                    score_200 = True
+##
+##                if score_points >= 300 and score_300 == False:
+##                    score_device_time = 90
+##                    score_300 = True
+##                    
+##                if score_points >= 500 and score_500 == False:
+##                    score_device_time = 120
+##                    score_500 = True
+##
+##                if score_points >= 700 and score_700 == False:
+##                    score_device_time = 150
+##                    score_700 = True
+##
+##                if score_points >= 1000 and score_1000 == False:
+##                    score_device_time = 180
+##                    score_1000 = True
                     
                 score_popup_value = apple_value
                 score_popup_x = lead_x
@@ -664,7 +699,7 @@ def gameLoop():
                 flake_original_x = rand_apple_x
                 
                 snake_length += 1
-                print("snake length: " + str(snake_length) + " fps: " + str(clock.get_fps()))
+                #print("snake length: " + str(snake_length) + " fps: " + str(clock.get_fps()))
 
                 # accelerate snake
                 if snake_move_speed <= block_size:
@@ -676,29 +711,29 @@ def gameLoop():
                 
                 score_points += apple_value
 
-                if score_points >= 100 and score_100 == False:
-                    score_device_time = 30
-                    score_100 = True
-
-                if score_points >= 200 and score_200 == False:
-                    score_device_time = 60
-                    score_200 = True
-
-                if score_points >= 300 and score_300 == False:
-                    score_device_time = 90
-                    score_300 = True
-
-                if score_points >= 500 and score_500 == False:
-                    score_device_time = 120
-                    score_500 = True
-
-                if score_points >= 700 and score_700 == False:
-                    score_device_time = 150
-                    score_700 = True
-
-                if score_points >= 1000 and score_1000 == False:
-                    score_device_time = 180
-                    score_1000 = True
+##                if score_points >= 100 and score_100 == False:
+##                    score_device_time = 60
+##                    score_100 = True
+##
+##                if score_points >= 200 and score_200 == False:
+##                    score_device_time = 90
+##                    score_200 = True
+##
+##                if score_points >= 300 and score_300 == False:
+##                    score_device_time = 120
+##                    score_300 = True
+##
+##                if score_points >= 500 and score_500 == False:
+##                    score_device_time = 150
+##                    score_500 = True
+##
+##                if score_points >= 700 and score_700 == False:
+##                    score_device_time = 180
+##                    score_700 = True
+##
+##                if score_points >= 1000 and score_1000 == False:
+##                    score_device_time = 210
+##                    score_1000 = True
                 
                 score_popup_value = apple_value
                 score_popup_x = lead_x
@@ -713,7 +748,7 @@ def gameLoop():
                 flake_original_x = rand_apple_x
                 
                 snake_length += 1
-                print("snake length: " + str(snake_length) + " fps: " + str(clock.get_fps()))
+                #print("snake length: " + str(snake_length) + " fps: " + str(clock.get_fps()))
 
                 # accelerate snake
                 if snake_move_speed < block_size:
@@ -742,19 +777,23 @@ def gameLoop():
 
         # turn on external device for specified amount of time
         # and then turn it off
-        if score_device_time > 0:
-            if device_on == False:
-                GPIO.output(7, GPIO.HIGH)
-                start_time = pygame.time.get_ticks()
-                device_on = True    
-            if score_device_time > -100:
-                score_device_time -= 1
-
-        elif score_device_time <= 0 and device_on == True:
-            GPIO.output(7, GPIO.LOW)
-            device_on = False
-            device_seconds = pygame.time.get_ticks()-start_time
-            print("device was on for " + repr(device_seconds) + " ms")
+##        if score_device_time > 0:
+##            if device_on == False:
+##                GPIO.output(17, GPIO.HIGH) #enable
+##                GPIO.output(27, GPIO.HIGH) #in 1
+##                GPIO.output(22, GPIO.LOW)  #in 2
+##                start_time = pygame.time.get_ticks()
+##                device_on = True    
+##            if score_device_time > -100:
+##                score_device_time -= 1
+##
+##        elif score_device_time <= 0 and device_on == True:
+##            GPIO.output(17, GPIO.LOW)
+##            GPIO.output(27, GPIO.LOW)
+##            GPIO.output(22, GPIO.LOW)
+##            device_on = False
+##            device_seconds = pygame.time.get_ticks()-start_time
+##            print("device was on for " + repr(device_seconds) + " ms")
 
         # set max framerate to tick_rate (30 fps)
         clock.tick(tick_rate)
