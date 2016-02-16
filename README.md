@@ -3,4 +3,6 @@ A snake game written in Python using the pygame libraries. The game idea is base
 
 The hardware also includes a self made, GPIO driven candy dispenser that dispenses candy based on your game score. 
 
+This project was specifically created for a local kids winter event.
+
 This is still an ongoing project and more info will be posted..
